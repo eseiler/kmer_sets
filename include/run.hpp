@@ -4,11 +4,6 @@
 
 #pragma once
 
-#include <filesystem>
+#include "configuration.hpp"
 
-struct configuration
-{
-    std::filesystem::path sample_A{};
-    std::filesystem::path sample_B{};
-    std::filesystem::path output{};
-};
+void run(configuration const & config);

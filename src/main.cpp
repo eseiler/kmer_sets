@@ -4,52 +4,52 @@
 
 #include <sharg/all.hpp>
 
-#include "fastq_conversion.hpp"
+#include "run.hpp"
+
+void setup_parser(sharg::parser & parser, configuration & config)
+{
+    parser.info.author = "Enrico Seiler";
+    parser.info.version = "1.0.0";
+
+    parser.add_option(config.sample_A,
+                      sharg::config{.short_id = '\0',
+                                    .long_id = "sample_A",
+                                    .description = "Sample A.",
+                                    .required = true,
+                                    .validator = sharg::input_file_validator{{"fastq"}}});
+
+    parser.add_option(config.sample_B,
+                      sharg::config{.short_id = '\0',
+                                    .long_id = "sample_B",
+                                    .description = "Sample B.",
+                                    .required = true,
+                                    .validator = sharg::input_file_validator{{"fastq"}}});
+
+    parser.add_option(config.output,
+                      sharg::config{.short_id = '\0',
+                                    .long_id = "output",
+                                    .description = "Output.",
+                                    .required = true,
+                                    .validator = sharg::output_file_validator{{"fasta"}}});
+}
 
 int main(int argc, char ** argv)
 {
-    // Configuration
     configuration config{};
 
-    // Parser
-    sharg::parser parser{"Fastq-to-Fasta-Converter", argc, argv};
-
-    // General information.
-    parser.info.author = "SeqAn-Team";
-    parser.info.version = "1.0.0";
-
-    // Positional option: The FASTQ file to convert.
-    parser.add_positional_option(config.fastq_input,
-                                 sharg::config{.description = "The FASTQ file to convert.",
-                                               .validator = sharg::input_file_validator{{"fq", "fastq"}}});
-
-    // Open: Output FASTA file. Default: print to terminal - handled in fastq_conversion.cpp.
-    parser.add_option(config.fasta_output,
-                      sharg::config{.short_id = 'o',
-                                    .long_id = "output",
-                                    .description = "The output FASTA file.",
-                                    .default_message = "Print to terminal (stdout)",
-                                    .validator = sharg::output_file_validator{}});
-
-    // Flag: Verose output.
-    parser.add_flag(
-        config.verbose,
-        sharg::config{.short_id = 'v', .long_id = "verbose", .description = "Give more detailed information."});
+    sharg::parser parser{"k-mer_set_difference", {argv, argv + argc}, sharg::update_notifications::off};
 
     try
     {
-        parser.parse(); // Trigger command line parsing.
+        setup_parser(parser, config);
+        parser.parse();
+        run(config);
     }
-    catch (sharg::parser_error const & ext) // Catch user errors.
+    catch (sharg::parser_error const & ext)
     {
-        std::cerr << "Parsing error. " << ext.what() << '\n'; // Give error message.
+        std::cerr << "[ERROR]: " << ext.what() << '\n';
         return -1;
     }
-
-    convert_fastq(config); // Call fastq to fasta converter.
-
-    if (config.verbose) // If flag is set.
-        std::cerr << "Conversion was a success. Congrats!\n";
 
     return 0;
 }
